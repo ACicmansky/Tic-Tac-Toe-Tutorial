@@ -18,7 +18,10 @@ function Board({ xIsNext, squares, onPlay }) {
         }
         const nextSquares = squares.slice();
         nextSquares[i] = xIsNext ? 'X' : 'O';
-        onPlay(nextSquares);
+        onPlay(nextSquares, {
+            row: Math.floor(i / 3),
+            col: i % 3
+        });
     }
 
     const winnerInfo = calculateWinner(squares);
@@ -58,14 +61,20 @@ function Board({ xIsNext, squares, onPlay }) {
 }
 
 export default function Game() {
-    const [history, setHistory] = useState([Array(9).fill(null)]);
+    const [history, setHistory] = useState([{
+        squares: Array(9).fill(null),
+        position: null
+    }]);
     const [currentMove, setcurrentMove] = useState(0);
     const [isAscending, setIsAscending] = useState(true);
     const xIsNext = currentMove % 2 === 0;
     const currentSquares = history[currentMove];
 
-    function handlePLay(nextSquares) {
-        const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
+    function handlePLay(nextSquares, position) {
+        const nextHistory = [...history.slice(0, currentMove + 1), {
+            squares: nextSquares,
+            position: position
+        }];
         setHistory(nextHistory);
         setcurrentMove(nextHistory.length - 1);
     }
@@ -78,17 +87,20 @@ export default function Game() {
         setIsAscending(!isAscending);
     }
 
-    const moves = history.map((squares, move) => {
+    const moves = history.map((step, move) => {
         let description;
         if (move === currentMove) {
-            description = 'You are at move #' + move;
+            description = 'You are at move #' + move + 
+                (step.position ? ` (${step.position.row}, ${step.position.col})` : '');
             return (
                 <li key={move}>
                     {description}
                 </li>
             );
         } else {
-            description = move > 0 ? 'Go to move #' + move : 'Go to game start';
+            description = move > 0 
+                ? `Go to move #${move} (${step.position.row}, ${step.position.col})`
+                : 'Go to game start';
             return (
                 <li key={move}>
                     <button onClick={() => jumpTo(move)}>{description}</button>
@@ -100,7 +112,7 @@ export default function Game() {
     return (
         <div className="game">
             <div className="game-board">
-                <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePLay} />
+                <Board xIsNext={xIsNext} squares={currentSquares.squares} onPlay={handlePLay} />
             </div>
             <div className="game-info">
                 <button onClick={toggleSortOrder}>
